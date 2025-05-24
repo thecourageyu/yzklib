@@ -1,0 +1,65 @@
+# Note
+# register an existing kernel for vscode jupyter notebook 
+#   1. Activate the virtualenv and install ipykernel
+#     ex. 
+#       python3 -m virtualenv /app/datas                       => create a venv called datas
+#       export PATH="app/datas/bin:$PATH"                      => update PATH 
+#       echo "source /app/datas/bin/activate" >> /root/.bashrc => activate on login
+#       pip install ipykernel, ...                             => install packages
+#   2. Register this virtualenv
+#     ex. python -m ipykernel install --user --name=yzkdatas --display-name "yzk (datas)"
+#   3. jupyter kernelspec list => check available kernels
+#   4. restart vscode
+
+services:     
+ 
+    ssh-server:
+        build:
+            context: ..
+            dockerfile: ./docker/Dockerfile
+            args:
+                SSH_USER: ${SSH_USER}
+                SSH_PASSWORD: ${SSH_PASSWORD}
+        restart: always
+        container_name: yzklib
+        environment:
+            # WORK_DIR: ${WORK_DIR}
+            # PYTHON_VENV: ${PYTHON_VENV}
+            # POSTGRES_HOST: ${POSTGRES_HOST}
+            # POSTGRES_PORT: ${POSTGRES_PORT}
+            # POSTGRES_USER: ${POSTGRES_USER} 
+            # POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            # POSTGRES_DB: ${POSTGRES_DB}
+            # DATAS_DB: ${DATAS_DB}
+            JWT_SECRET: ${SSH_PASSWORD}
+            TZ: ${TZ}
+
+        ports:
+            - "6622:22" # Maps container's port 22 to host's port 2222
+            # - "5173:5173"
+            # - "3000:3000"
+        
+        volumes:
+            # - "C:\\Users\\YuZhe\\Project\\datas:/work/datas"
+            # - "C:\\Users\\YuZhe\\Project\\datas\\data:/app/data"
+            # - "C:\\\\Users\\\\yuzhe\\\\projects\\\\:/work/YZKMSI"
+            # - "I:\\\\ReactNode:/work/YuPiPC"
+            - "F:\\projects\\yzklib:/work/YZKPC/yzklib"
+        
+        # networks:
+        #     - datasnet
+
+# volumes:
+#     postgres-data:
+#         name: "postgres-datas"
+#     pgadmin-data:
+#         name: "pgadmin-datas"
+
+# networks:
+
+#   datasnet:
+#     name:
+#       datasnet
+#     driver:
+#       bridge
+      # host
