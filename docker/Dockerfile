@@ -12,11 +12,12 @@ RUN apt-get update && apt-get install -y \
     gnupg2 lsb-release \
     nodejs npm \
     openssh-server \
-    sudo && \
+    sudo \
+    supervisor && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /var/run/sshd
-    # ssh-keygen -A
+    mkdir /var/run/sshd
 
+RUN ssh-keygen -A
 # SSH config
 # RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config && \
 #     echo "PermitRootLogin no" >> /etc/ssh/sshd_config && \
@@ -47,6 +48,9 @@ RUN useradd -ms /bin/bash ${SSH_USER} && \
     echo "${SSH_USER}:${SSH_PASSWORD}" | chpasswd && \
     adduser ${SSH_USER} sudo
 
+RUN sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+
 # Setup SSH server
 # RUN mkdir /var/run/sshd && \
 #     echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config && \
@@ -57,8 +61,8 @@ RUN useradd -ms /bin/bash ${SSH_USER} && \
 EXPOSE 22
 
 # Set default user and working directory
-USER ${SSH_USER}
-WORKDIR /home/${SSH_USER}
+#USER ${SSH_USER}
+#WORKDIR /home/${SSH_USER}
 
 # Start SSH server
 CMD ["/usr/sbin/sshd", "-D"]
