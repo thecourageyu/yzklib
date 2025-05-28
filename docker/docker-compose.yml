@@ -40,11 +40,11 @@ services:
             # - "3000:3000"
         
         volumes:
-            # - "C:\\Users\\YuZhe\\Project\\datas:/work/datas"
-            # - "C:\\Users\\YuZhe\\Project\\datas\\data:/app/data"
-            # - "C:\\\\Users\\\\yuzhe\\\\projects\\\\:/work/YZKMSI"
+          #- "C:\\Users\\YuZhe\\Project\\datas:/work/datas"
+          #- "C:\\Users\\YuZhe\\Project\\datas\\data:/app/data"
+          - "C:\\Users\\yuzhe\\projects\\:/work/YZKMSI"
             # - "I:\\\\ReactNode:/work/YuPiPC"
-            - "F:\\projects\\yzklib:/work/YZKPC/yzklib"
+            #- "F:\\projects\\yzklib:/work/YZKPC/yzklib"
         
         # networks:
         #     - datasnet
