@@ -20,6 +20,7 @@ public:
 
     std::string pythonDictToJson(std::string s);
     std::vector<ToolCall> parseToolCalls(const std::string &text);
+    std::string getOpenAIToolCall(std::string modelResponse, std::string position);
     std::string buildPlannerChatTemplate(const std::vector<std::pair<std::string, std::string>> &history);
     std::string buildSolverChatTemplate(const std::vector<std::pair<std::string, std::string>> &history);
 

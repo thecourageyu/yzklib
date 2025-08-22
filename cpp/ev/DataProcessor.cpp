@@ -1,6 +1,7 @@
-#include "DataProcessor.h"   // 👈 make sure this is at the top
+#include "DataProcessor.h"   // make sure this is at the top
 
 #include <iostream>
+// #include <ranges>
 #include <regex>
 #include <sstream>
 
@@ -22,6 +23,7 @@ std::string DataProcessor::pythonDictToJson(std::string s) {
 
     // replace Python None with JSON null (if ever appears)
     s = std::regex_replace(s, std::regex("\\bNone\\b"), "null");
+    // s = std::regex_replace(s, std::regex("\\bNone\\b"), "");
     // std::cout << s << std::endl;
     return s;
 }
@@ -74,6 +76,95 @@ std::vector<ToolCall> DataProcessor::parseToolCalls(const std::string &inputText
 }
 
 
+// 產生符合 OpenAI Tool Calling 的 JSON 字串
+// 規則：
+//  1) parameters 是 array → arguments 就是該 array
+//  2) parameters 唯一鍵為 "properties" 且其值為 array → arguments 就是該 array
+//  3) 其他情況 → arguments 為完整的 parameters 物件
+// std::string DataProcessor::getOpenAIToolCall(const std::string& tool_name, const nlohmann::json& parameters) 
+std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::string position) 
+{
+    std::vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
+    for (auto &c : toolCalls) {
+        std::cout << "Func: " << c.name << " Args: " << c.arguments << std::endl;
+
+    }
+    nlohmann::json payload;
+    payload["tool_calls"] = nlohmann::json::array();
+
+
+
+    nlohmann::json parameters;
+    nlohmann::json arguments_obj;
+    nlohmann::json fn;
+    nlohmann::json call;
+    // for (auto &tc : toolCalls) {
+    //    std::vector<int> a = {10, 20, 30};
+
+    for (int idx = 0; idx < toolCalls.size(); idx++) {
+        ToolCall tc = toolCalls[idx];
+        std::cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << std::endl;
+        parameters = tc.arguments;
+        
+        if (parameters.is_array()) {
+            // [{k: v , ...}, {}, ...]
+            arguments_obj = parameters;
+        } else if (parameters.is_object() &&
+                parameters.size() == 1 &&
+                parameters.contains("properties") &&
+                parameters.at("properties").is_array()) {
+            // {k: []}
+            // std::cout << "parameter is object!" << std::endl;
+            arguments_obj = parameters.at("properties");
+        } else {
+            // {k: v, ...}
+            // std::cout << "parameter is ?!" << std::endl;
+            arguments_obj = parameters;
+        }
+
+
+        if (tc.name == "control_car_properties") {
+            if (arguments_obj.is_array()) {
+                if (arguments_obj[0].contains("areaId")) {
+                    if (arguments_obj[0]["areaId"].is_string() && arguments_obj[0]["areaId"] == "") {
+                        arguments_obj[0]["areaId"] = position;
+                    } else if (arguments_obj[0]["areaId"].is_null()) {
+                        arguments_obj[0]["areaId"] = position;
+                    }
+                    
+                } else {
+                    arguments_obj[0]["areaId"] = position;
+                }
+            } else {    
+                if (arguments_obj.contains("areaId")) {
+                    if (arguments_obj["areaId"].is_string() && arguments_obj["areaId"] == "") {
+                        arguments_obj["areaId"] = position;
+                    } else if (arguments_obj["areaId"].is_null()) {
+                        arguments_obj["areaId"] = position;
+                    }
+                    
+                } else {
+                    arguments_obj["areaId"] = position;
+                }
+            }
+        }
+
+
+        fn["name"] = tc.name;
+        fn["arguments"] = arguments_obj.dump(); // 內層 arguments 要是「字串化的 JSON」
+
+        call["id"] = "call_" + std::to_string(idx + 1);
+        call["type"] = "function";
+        call["function"] = fn;
+        payload["tool_calls"].push_back(call);
+    }
+    
+    // ex. {tool_calls: [{'name': ..., 'arguments': ..., 'id': call_1, 'type': function, }]}
+    return payload.dump(); // 緊湊輸出、保留 UTF-8
+
+    //payload["tool_calls"] = [ {function: {arg, name}, id: ..., type: ...}, {}]
+}
+
 std::string DataProcessor::build_chat_template(
         const std::vector<std::pair<std::string, std::string>> &history) {
     std::ostringstream oss;
@@ -92,8 +183,8 @@ std::string DataProcessor::buildPlannerChatTemplate(const std::vector<std::pair<
     roleMapping["user"] = "user";
     roleMapping["assistant"] = "assistant";
     roleMapping["ipython"] = "ipython";
-    roleMapping["observation"] = "ipython";
-    roleMapping["tool"] = "ipython";
+    // roleMapping["observation"] = "ipython";
+    // roleMapping["tool"] = "ipython";
 
     std::ostringstream oss;
     for (auto &msg : history) {
