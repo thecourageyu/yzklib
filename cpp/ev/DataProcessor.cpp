@@ -5,7 +5,9 @@
 #include <regex>
 #include <sstream>
 
-#include "include/nlohmann/json.hpp"
+// #include "include/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
+
 using json = nlohmann::json;   // alias (optional)
 // sudo apt-get install nlohmann-json3-dev
 // wget https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp -O json.hpp
