@@ -12,6 +12,86 @@ using json = nlohmann::json;   // alias (optional)
 // sudo apt-get install nlohmann-json3-dev
 // wget https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp -O json.hpp
 
+static std::vector<std::string> newSpecialTokens = {
+    // "<hhev_split>",
+    // "<hhev_end>",
+    // "<handle_miscellaneous_task>",
+    // "<control_car_properties>",
+    // "<nav_start>",
+    // "<nav_stop>",
+    // "<search_and_show_place>",
+    // "<set_seat_mode>",
+    "<SEAT_ALL>",
+    "<SEAT_ROW_1>",
+    "<SEAT_ROW_1_LEFT>",
+    "<SEAT_ROW_1_RIGHT>",
+    "<SEAT_ROW_2>",
+    "<SEAT_ROW_2_LEFT>",
+    "<SEAT_ROW_2_RIGHT>",
+    "<SEAT_ROW_3>",
+    "<SEAT_ROW_3_LEFT>",
+    "<SEAT_ROW_3_RIGHT>",
+    "<SLIDING_DOOR_LEFT>",
+    "<SLIDING_DOOR_RIGHT>",
+    "<SUNROOF>",
+    "<CHILD_LOCK>",
+    "<DASHBOARD_DISPLAY>",
+    "<EV_CHARGE_PORT_OPEN>",
+    "<FRONT_TRUNK_ON>",
+    "<HVAC_AC_ON>",
+    "<HVAC_AUTO_ON>",
+    "<HVAC_DEFROSTER>",
+    "<HVAC_FAN_DIRECTION>",
+    "<HVAC_FAN_OUTPUT_MODE>",
+    "<HVAC_FAN_OUTPUT_ON>",
+    "<HVAC_FAN_SPEED>",
+    "<HVAC_MAX_AC_ON>",
+    "<HVAC_POWER_ON>",
+    "<HVAC_RECIRC_MODE>",
+    "<HVAC_SCENARIO_MODE>",
+    "<HVAC_SEAT_TEMPERATURE_POWER_ON>",
+    "<HVAC_SEAT_TEMPERATURE_SET>",
+    "<HVAC_SEAT_VENTILATION_POWER_ON>",
+    "<HVAC_SEAT_VENTILATION_SET>",
+    "<HVAC_STEERING_WHEEL_HEAT>",
+    "<HVAC_SYNC_MODE>",
+    "<HVAC_TEMPERATURE_SET>",
+    "<INFOTAINMENT_SYSTEM>",
+    "<INTERIOR_LIGHT>",
+    "<POWER_SUNSHADE>",
+    "<POWER_TAILGATE_ON>",
+    "<SEAT_BACKREST_ANGLE_POS>",
+    "<SEAT_CUSHION_SIDE_SUPPORT_POS>",
+    "<SEAT_FORE_AFT_POS>",
+    "<SEAT_HEADREST_HEIGHT_POS>",
+    "<SEAT_HEIGHT_POS>",
+    "<SEAT_LEGREST_FORE_AFT_POS>",
+    "<SEAT_LEGREST_HEIGHT_POS>",
+    "<SEAT_LUMBAR_FORE_AFT_POS>",
+    "<SEAT_LUMBAR_HEIGHT_POS>",
+    "<SEAT_MASSAGE_INTENSITY>",
+    "<SEAT_MASSAGE_MODE>",
+    "<SEAT_MASSAGE_ON>",
+    "<SEAT_MASSAGE_REGION>",
+    "<SEAT_POSITION_MEMORY_SET>",
+    "<SEAT_STOW_MODE>",
+    "<SLIDING_DOOR_ON>",
+    "<SMARTPHONE_INTEGRATION>",
+    "<SURROUND_VIEW_CAMERA_SYSTEM>",
+    "<WINDOW_POS>",
+};
+
+
+std::string replaceAll(std::string text, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while ((start_pos = text.find(from, start_pos)) != std::string::npos) {
+        text.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return text;
+}
+
+
 // helper: convert Python-style dict string into JSON-like string
 std::string DataProcessor::pythonDictToJson(std::string s) {
     // replace single quotes with double quotes
@@ -39,6 +119,14 @@ std::vector<ToolCall> DataProcessor::parseToolCalls(const std::string &inputText
     std::string cleaned = text;
     while ((pos = cleaned.find("<hhev_end>")) != std::string::npos) {  // no position
         cleaned.erase(pos, std::string("<hhev_end>").length());
+    }
+    
+    for (const auto& token : newSpecialTokens) {
+        if (cleaned.find(token) != std::string::npos) {
+            // 去掉前後的 "<" 和 ">"
+            std::string stripped = token.substr(1, token.size() - 2);  // ex. <nav_start>, 取(第一個) 至 (原長度 - 2) => nav_start
+            cleaned = replaceAll(cleaned, token, stripped);
+        }
     }
 
     // Split on <hhev_split>
@@ -87,10 +175,10 @@ std::vector<ToolCall> DataProcessor::parseToolCalls(const std::string &inputText
 std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::string position) 
 {
     std::vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
-    for (auto &c : toolCalls) {
-        std::cout << "Func: " << c.name << " Args: " << c.arguments << std::endl;
+    // for (auto &c : toolCalls) {
+    //     std::cout << "Func: " << c.name << " Args: " << c.arguments << std::endl;
 
-    }
+    // }
     nlohmann::json payload;
     payload["tool_calls"] = nlohmann::json::array();
 
@@ -105,7 +193,7 @@ std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::str
 
     for (int idx = 0; idx < toolCalls.size(); idx++) {
         ToolCall tc = toolCalls[idx];
-        std::cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << std::endl;
+        // std::cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << std::endl;
         parameters = tc.arguments;
         
         if (parameters.is_array()) {

@@ -42,10 +42,19 @@ services:
         volumes:
           #- "C:\\Users\\YuZhe\\Project\\datas:/work/datas"
           #- "C:\\Users\\YuZhe\\Project\\datas\\data:/app/data"
-          - "C:\\Users\\yuzhe\\projects\\:/work/YZKMSI"
+            - "C:\\Users\\yuzhe\\projects\\:/work/YZKMSI"
             # - "I:\\\\ReactNode:/work/YuPiPC"
             #- "F:\\projects\\yzklib:/work/YZKPC/yzklib"
         
+        deploy:
+            resources:
+                reservations:
+                devices:
+                - driver: nvidia
+                count: all
+            #            device_ids: ["0"]
+                capabilities: ["gpu"]
+
         # networks:
         #     - datasnet
 

@@ -18,6 +18,8 @@ struct ToolCall {
 };
 
 class DataProcessor {
+// private:
+//     std::vector<string> newSpecialTokens;
 public:
 
     std::string pythonDictToJson(std::string s);
