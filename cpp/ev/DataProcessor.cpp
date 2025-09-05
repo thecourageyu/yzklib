@@ -13,14 +13,8 @@ using json = nlohmann::json;   // alias (optional)
 // wget https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp -O json.hpp
 
 static std::vector<std::string> newSpecialTokens = {
-    // "<hhev_split>",
-    // "<hhev_end>",
-    // "<handle_miscellaneous_task>",
-    // "<control_car_properties>",
-    // "<nav_start>",
-    // "<nav_stop>",
-    // "<search_and_show_place>",
-    // "<set_seat_mode>",
+    "<FRONT_WINDSHIELD>",
+    "<REAR_WINDSHIELD>",
     "<SEAT_ALL>",
     "<SEAT_ROW_1>",
     "<SEAT_ROW_1_LEFT>",
@@ -78,8 +72,10 @@ static std::vector<std::string> newSpecialTokens = {
     "<SLIDING_DOOR_ON>",
     "<SMARTPHONE_INTEGRATION>",
     "<SURROUND_VIEW_CAMERA_SYSTEM>",
-    "<WINDOW_POS>",
+    "<WINDOW_POS>"
 };
+
+
 
 
 std::string replaceAll(std::string text, const std::string& from, const std::string& to) {
