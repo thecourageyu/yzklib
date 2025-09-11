@@ -199,7 +199,7 @@ std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::str
                 parameters.size() == 1 &&
                 parameters.contains("properties") &&
                 parameters.at("properties").is_array()) {
-            // {k: []}
+            // {properties: []}
             // std::cout << "parameter is object!" << std::endl;
             arguments_obj = parameters.at("properties");
         } else {

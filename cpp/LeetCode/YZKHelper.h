@@ -11,9 +11,10 @@
 using namespace std;
 using json = nlohmann::json;
 
-class helper {
+class YZKHelper {
+public:
     vector<string> load_file(string &filename);
-    vector<string> load_csv(string &filename);;
+    vector<vector<string>> load_csv(string &filename);;
     vector<json> load_json(string &filename);;
 };
 

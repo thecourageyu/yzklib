@@ -3,6 +3,7 @@
 //
 
 #include "ProgramingEaxm.h"
+#include "YZKHelper.h"
 #include <iostream>
 
 using namespace std;
@@ -28,6 +29,10 @@ std::string replaceAll(std::string text, const std::string& from, const std::str
 }
 
 int main() {
+
+    string fname = "/work/YZKMSI/yzklib/cpp/LeetCode/AICoE_testing_20250905_125028.csv";
+    YZKHelper hp;
+    hp.load_csv(fname);
 
     // 相當於 Python 的 list
     std::vector<std::string> new_special_tokens = {
