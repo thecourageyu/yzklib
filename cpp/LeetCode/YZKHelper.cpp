@@ -53,9 +53,10 @@ vector<vector<string>> YZKHelper::load_csv(string &filename) {
         }
 
         // Print parsed row
-        for (const auto &col : row) {
-            cout << col << " | ";
-        }
+        // for (const auto &col : row) {
+        //     cout << col << " | ";
+        // }
+        data.push_back(row);
         cout << endl;
     }
 

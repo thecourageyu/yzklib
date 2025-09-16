@@ -32,7 +32,10 @@ int main() {
 
     string fname = "/work/YZKMSI/yzklib/cpp/LeetCode/AICoE_testing_20250905_125028.csv";
     YZKHelper hp;
-    hp.load_csv(fname);
+    std::vector<vector<std::string>> csv_data = hp.load_csv(fname);
+    for (const auto& r : csv_data) {
+        std::cout << r[0] << std::endl;
+    }
 
     // 相當於 Python 的 list
     std::vector<std::string> new_special_tokens = {
