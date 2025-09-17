@@ -4,15 +4,42 @@
 // #include <ranges>
 #include <regex>
 #include <sstream>
-
 // #include "include/nlohmann/json.hpp"
 #include <nlohmann/json.hpp>
 
+using namespace std;
 using json = nlohmann::json;   // alias (optional)
 // sudo apt-get install nlohmann-json3-dev
 // wget https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp -O json.hpp
 
-static std::vector<std::string> newSpecialTokens = {
+
+static json keywordPositionalArgsMapping = {
+    {"control_car_properties", {
+        "propertyId", 0,
+        "areaId", 1,
+        "operation", 2,
+        "value", 3,
+    }},
+    {"get_hhtd_info", {"areaId", 0, "query", 1}},
+    {"get_vehicle_info", {"areaId", 0, "query", 1}},
+    {"handle_miscellaneous_task", {"user_query", 0}},
+    {"hide_poi_list", json::object()},
+    {"nav_start", {
+        "keyword", 0,
+        "name", 1,
+        "address", 2,
+        "latitude", 3,
+        "longitude", 4,
+        "routeType", 5,
+        "isWaypoints", 6,
+        "fromMemory", 7,
+    }},
+    {"nav_stop", json::object()},
+    {"search_and_show_place", {"keyword", 0}},
+    {"set_seat_mode", {"areaId", 0, "operation", 1, "value", 2}},
+};
+
+static vector<string> newSpecialTokens = {
     "<FRONT_WINDSHIELD>",
     "<REAR_WINDSHIELD>",
     "<SEAT_ALL>",
@@ -78,9 +105,9 @@ static std::vector<std::string> newSpecialTokens = {
 
 
 
-std::string replaceAll(std::string text, const std::string& from, const std::string& to) {
+string replaceAll(string text, const string& from, const string& to) {
     size_t start_pos = 0;
-    while ((start_pos = text.find(from, start_pos)) != std::string::npos) {
+    while ((start_pos = text.find(from, start_pos)) != string::npos) {
         text.replace(start_pos, from.length(), to);
         start_pos += to.length();
     }
@@ -89,71 +116,97 @@ std::string replaceAll(std::string text, const std::string& from, const std::str
 
 
 // helper: convert Python-style dict string into JSON-like string
-std::string DataProcessor::pythonDictToJson(std::string s) {
+string DataProcessor::pythonDictToJson(string s) {
     // replace single quotes with double quotes
     for (auto& c : s) {
         if (c == '\'') c = '"';
     }
 
     // replace Python booleans with JSON booleans
-    s = std::regex_replace(s, std::regex("\\bTrue\\b"), "true");
-    s = std::regex_replace(s, std::regex("\\bFalse\\b"), "false");
+    s = regex_replace(s, regex("\\bTrue\\b"), "true");
+    s = regex_replace(s, regex("\\bFalse\\b"), "false");
 
     // replace Python None with JSON null (if ever appears)
-    s = std::regex_replace(s, std::regex("\\bNone\\b"), "null");
-    // s = std::regex_replace(s, std::regex("\\bNone\\b"), "");
-    // std::cout << s << std::endl;
+    s = regex_replace(s, regex("\\bNone\\b"), "null");
+    // s = regex_replace(s, regex("\\bNone\\b"), "");
+    // cout << s << endl;
     return s;
 }
 
-std::vector<ToolCall> DataProcessor::parseToolCalls(const std::string &inputText) {
-    std::string text = inputText;
-    std::vector<ToolCall> tool_calls;
+vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool posi2Kw) {
+    string text = inputText;
+    vector<ToolCall> tool_calls;
 
     // Remove <hhev_end>
     size_t pos;
-    std::string cleaned = text;
-    while ((pos = cleaned.find("<hhev_end>")) != std::string::npos) {  // no position
-        cleaned.erase(pos, std::string("<hhev_end>").length());
+    string cleaned = text;
+    while ((pos = cleaned.find("<hhev_end>")) != string::npos) {  // no position
+        cleaned.erase(pos, string("<hhev_end>").length());
     }
     
     for (const auto& token : newSpecialTokens) {
-        if (cleaned.find(token) != std::string::npos) {
+        if (cleaned.find(token) != string::npos) {
             // 去掉前後的 "<" 和 ">"
-            std::string stripped = token.substr(1, token.size() - 2);  // ex. <nav_start>, 取(第一個) 至 (原長度 - 2) => nav_start
+            string stripped = token.substr(1, token.size() - 2);  // ex. <nav_start>, 取(第一個) 至 (原長度 - 2) => nav_start
             cleaned = replaceAll(cleaned, token, stripped);
         }
     }
 
     // Split on <hhev_split>
-    std::vector<std::string> tools;
+    vector<string> tools;
     size_t start = 0, end;
-    while ((end = cleaned.find("<hhev_split>", start)) != std::string::npos) {
+    while ((end = cleaned.find("<hhev_split>", start)) != string::npos) {
         tools.push_back(cleaned.substr(start, end - start));
-        start = end + std::string("<hhev_split>").length();
+        start = end + string("<hhev_split>").length();
     }
     tools.push_back(cleaned.substr(start));
 
+    
     // Regex to match <tool>(args)
-    std::regex re("<(.*)>\\((.*)\\)");
-
+    regex re("<(.*)>\\((.*)\\)");
+    vector<string> posiArgs;
+    json posi2Kwargs;
     for (const auto& tool : tools) {
-        std::smatch match;
-        if (std::regex_search(tool, match, re)) {
-            std::string tool_name = match[1];
-            std::string tool_args = match[2];
+        smatch match;
+        if (regex_search(tool, match, re)) {
+            string toolName = match[1];
+            string toolArgs = match[2];
             
-            try {
-                std::string fixed_args = DataProcessor::pythonDictToJson(tool_args);
-                json parsed = json::parse(fixed_args);
-                tool_calls.push_back({tool_name, parsed});
-            } catch (std::exception& e) {
-                std::string fixed_args = DataProcessor::pythonDictToJson(tool_args);
-                // Fallback: store raw string if JSON parse fails
-                tool_calls.push_back({tool_name, fixed_args});
-                std::cerr << "[ERR] parse tool args failed! " 
-                          << tool_name << ", " << fixed_args << "\n" 
-                          << e.what() << std::endl;
+            if (posi2Kw) {
+                posiArgs.clear();
+                posiArgs.shrink_to_fit();   // optional, forces memory release
+                posi2Kwargs.clear(); 
+
+                json keyword2Position = keywordPositionalArgsMapping[toolName];
+
+                start = 0;
+                while ((end = toolArgs.find("<args_split>", start)) != string::npos) {
+                    posiArgs.push_back(toolArgs.substr(start, end - start));    
+                    start = end + string("<args_split>").length();
+                }
+                
+                if (posiArgs.size() == 0) {
+                    posiArgs.push_back(toolArgs);
+                }
+
+                for (auto& [kw, posi] : keyword2Position.items()) {
+                    posi2Kwargs[kw] = posiArgs[posi];
+                }
+                tool_calls.push_back({toolName, posi2Kwargs});
+                
+            } else {
+                try {
+                    string fixed_args = DataProcessor::pythonDictToJson(toolArgs);
+                    json parsed = json::parse(fixed_args);
+                    tool_calls.push_back({toolName, parsed});
+                } catch (exception& e) {
+                    string fixed_args = DataProcessor::pythonDictToJson(toolArgs);
+                    // Fallback: store raw string if JSON parse fails
+                    tool_calls.push_back({toolName, fixed_args});
+                    cerr << "[ERR] parse tool args failed! " 
+                            << toolName << ", " << fixed_args << "\n" 
+                            << e.what() << endl;
+                }
             }
         }
     }
@@ -167,29 +220,27 @@ std::vector<ToolCall> DataProcessor::parseToolCalls(const std::string &inputText
 //  1) parameters 是 array → arguments 就是該 array
 //  2) parameters 唯一鍵為 "properties" 且其值為 array → arguments 就是該 array
 //  3) 其他情況 → arguments 為完整的 parameters 物件
-// std::string DataProcessor::getOpenAIToolCall(const std::string& tool_name, const nlohmann::json& parameters) 
-std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::string position) 
+// string DataProcessor::getOpenAIToolCall(const string& toolName, const json& parameters) 
+string DataProcessor::getOpenAIToolCall(string modelResponse, string position) 
 {
-    std::vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
+    vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
     // for (auto &c : toolCalls) {
-    //     std::cout << "Func: " << c.name << " Args: " << c.arguments << std::endl;
+    //     cout << "Func: " << c.name << " Args: " << c.arguments << endl;
 
     // }
-    nlohmann::json payload;
-    payload["tool_calls"] = nlohmann::json::array();
+    json payload;
+    payload["tool_calls"] = json::array();
 
-
-
-    nlohmann::json parameters;
-    nlohmann::json arguments_obj;
-    nlohmann::json fn;
-    nlohmann::json call;
+    json parameters;
+    json arguments_obj;
+    json fn;
+    json call;
     // for (auto &tc : toolCalls) {
-    //    std::vector<int> a = {10, 20, 30};
+    //    vector<int> a = {10, 20, 30};
 
     for (int idx = 0; idx < toolCalls.size(); idx++) {
         ToolCall tc = toolCalls[idx];
-        // std::cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << std::endl;
+        // cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << endl;
         parameters = tc.arguments;
         
         if (parameters.is_array()) {
@@ -200,11 +251,11 @@ std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::str
                 parameters.contains("properties") &&
                 parameters.at("properties").is_array()) {
             // {properties: []}
-            // std::cout << "parameter is object!" << std::endl;
+            // cout << "parameter is object!" << endl;
             arguments_obj = parameters.at("properties");
         } else {
             // {k: v, ...}
-            // std::cout << "parameter is ?!" << std::endl;
+            // cout << "parameter is ?!" << endl;
             arguments_obj = parameters;
         }
 
@@ -239,7 +290,7 @@ std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::str
         fn["name"] = tc.name;
         fn["arguments"] = arguments_obj.dump(); // 內層 arguments 要是「字串化的 JSON」
 
-        call["id"] = "call_" + std::to_string(idx + 1);
+        call["id"] = "call_" + to_string(idx + 1);
         call["type"] = "function";
         call["function"] = fn;
         payload["tool_calls"].push_back(call);
@@ -251,9 +302,9 @@ std::string DataProcessor::getOpenAIToolCall(std::string modelResponse, std::str
     //payload["tool_calls"] = [ {function: {arg, name}, id: ..., type: ...}, {}]
 }
 
-std::string DataProcessor::build_chat_template(
-        const std::vector<std::pair<std::string, std::string>> &history) {
-    std::ostringstream oss;
+string DataProcessor::build_chat_template(
+        const vector<pair<string, string>> &history) {
+    ostringstream oss;
     for (auto &msg : history) {
         oss << "<|start_header_id|>" << msg.first << "<|end_header_id|>\n\n"
             << msg.second << "<|eot_id|>";
@@ -263,16 +314,16 @@ std::string DataProcessor::build_chat_template(
 }
 
 
-std::string DataProcessor::buildPlannerChatTemplate(const std::vector<std::pair<std::string, std::string>> &history) {
+string DataProcessor::buildPlannerChatTemplate(const vector<pair<string, string>> &history) {
 
-    std::unordered_map<std::string, std::string> roleMapping;
+    unordered_map<string, string> roleMapping;
     roleMapping["user"] = "user";
     roleMapping["assistant"] = "assistant";
     roleMapping["ipython"] = "ipython";
     // roleMapping["observation"] = "ipython";
     // roleMapping["tool"] = "ipython";
 
-    std::ostringstream oss;
+    ostringstream oss;
     for (auto &msg : history) {
 
         oss << "<|start_header_id|>" << roleMapping[msg.first] << "<|end_header_id|>\n\n"
@@ -283,8 +334,8 @@ std::string DataProcessor::buildPlannerChatTemplate(const std::vector<std::pair<
 }
 
 
-std::string DataProcessor::buildSolverChatTemplate(const std::vector<std::pair<std::string, std::string>> &history) {
-    std::string SOLVER_SYSTEM_PROMPT = R"(You are an AI assistant tasked with improving a response using full context from a multi-turn interaction.
+string DataProcessor::buildSolverChatTemplate(const vector<pair<string, string>> &history) {
+    string SOLVER_SYSTEM_PROMPT = R"(You are an AI assistant tasked with improving a response using full context from a multi-turn interaction.
 
 You are given:
 - The user query
@@ -297,7 +348,7 @@ Use the function result meaningfully. Improve clarity, tone, or completeness if 
 Respond only with the improved message (do not explain or output metadata).
 )";
 
-    std::string SOLVER_PROMPT = R"(
+    string SOLVER_PROMPT = R"(
 ---
 
 {}
@@ -329,16 +380,16 @@ Improved Response:
 // Improved Response:
 
    
-// std::string build_solver_prompt(const std::vector<json>& messages) {
-    std::string chat_hist;
-    std::string prev_role;
-    std::string prev_content;
+// string build_solver_prompt(const vector<json>& messages) {
+    string chat_hist;
+    string prev_role;
+    string prev_content;
 
     for (const auto &msg : history) {
-        // std::string role = msg.at("role");
-        // std::string content = msg.at("content");
-        std::string role = msg.first;
-        std::string content = msg.second;
+        // string role = msg.at("role");
+        // string content = msg.at("content");
+        string role = msg.first;
+        string content = msg.second;
 
         if (role == "user") {
             chat_hist += "user: " + content + "\n";
@@ -347,7 +398,7 @@ Improved Response:
             if (prev_role == "ipython") {
                 chat_hist += "assistant: " + content + "\n";
             } else {
-                if (content.find("<hhev_end>") != std::string::npos) {
+                if (content.find("<hhev_end>") != string::npos) {
                     chat_hist += "function_call: " + content + "\n";
                 } else {
                     chat_hist += "assistant: " + content + "\n";
@@ -363,13 +414,13 @@ Improved Response:
     }
 
     // Equivalent to Python f-string formatting
-    std::string prompt;
+    string prompt;
     prompt += "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" + SOLVER_SYSTEM_PROMPT + "\n<|eot_id|>";
     
     // Replace "{}" in SOLVER_PROMPT with chat_hist
-    std::string user_block = SOLVER_PROMPT;
+    string user_block = SOLVER_PROMPT;
     size_t pos = user_block.find("{}");
-    if (pos != std::string::npos) {
+    if (pos != string::npos) {
         user_block.replace(pos, 2, chat_hist);
     }
 

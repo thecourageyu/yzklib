@@ -16,16 +16,20 @@ using json = nlohmann::json;
 vector<string> YZKHelper::load_file(string &filename) {
     ifstream file(filename);
     vector<string> data;
+    if (!file.is_open()) {
+        cerr << "[ERR] could not open file." << endl;
+        return data;
+    }
+    
     string x;
-
-    while (file >> x) {
+    while (getline(file, x)) {
         data.push_back(x);
     }
 
-    for (string v : data) {
-        cout << v << " ";
-    }
-    cout << endl;
+    // for (string v : data) {
+    //     cout << v << endl;
+    // }
+    // cout << endl;
     return data;
 }
 
@@ -57,7 +61,7 @@ vector<vector<string>> YZKHelper::load_csv(string &filename) {
         //     cout << col << " | ";
         // }
         data.push_back(row);
-        cout << endl;
+        // cout << endl;
     }
 
     file.close();

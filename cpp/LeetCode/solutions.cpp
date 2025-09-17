@@ -32,10 +32,22 @@ int main() {
 
     string fname = "/work/YZKMSI/yzklib/cpp/LeetCode/AICoE_testing_20250905_125028.csv";
     YZKHelper hp;
+
+    std::vector<std::string> file_data = hp.load_file(fname);
+    // for (const auto& r : file_data) {
+    //     std::cout << r[0] << std::endl;
+    // }
+
     std::vector<vector<std::string>> csv_data = hp.load_csv(fname);
-    for (const auto& r : csv_data) {
-        std::cout << r[0] << std::endl;
-    }
+    // for (const auto& r : csv_data) {
+    //     std::cout << r[0] << std::endl;
+    // }
+
+    ProgramingEaxm programingEaxm;
+
+    vector<int> num = {1, 2, 3, 4, 5, 5, 66, 1};
+    int k = programingEaxm.removeDuplicatesFromSortedArray(num);
+    cout << "26. Remove Duplicates from Sorted Array, k = " << k << endl;
 
     // 相當於 Python 的 list
     std::vector<std::string> new_special_tokens = {

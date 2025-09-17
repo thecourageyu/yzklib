@@ -82,17 +82,20 @@ void slm_parse(std::string llm_result, std::string position)
 int main() {
 
     std::vector<std::string> raw_tool_calls = {
-        "<control_car_properties>({'propertyId': 'SEAT_CUSHION_SIDE_SUPPORT_POS', 'areaId': 'SEAT_ROW_3', 'operation': 'decrease'})<hhev_end>",
-        "<hide_poi_list>({})<hhev_end>",
-        "<nav_stop>({})<hhev_end>",
-        "<control_car_properties>({'propertyId': 'POWER_TAILGATE_ON', 'areaId': '', 'operation': 'set', 'value': 'true'})<hhev_end>",
-        "<search_and_show_place>({'keyword': '童年時光托嬰中心'})<hhev_end>",
-        "<control_car_properties>({'propertyId': 'WINDOW_POS', 'areaId': '', 'operation': 'set', 'value': '90'})<hhev_end>",
-        "<control_car_properties>({'propertyId': 'HVAC_FAN_DIRECTION', 'areaId': 'SEAT_ROW_1_RIGHT', 'operation': 'set', 'value': 'FOOT'})<hhev_end>",
-        "<nav_start>({'keyword': '義式鄉村風的眼科診所', 'name': '基隆光明眼科', 'address': '基隆市仁愛區孝三路166號', 'latitude': 25.1296, 'longitude': 121.7424, 'routeType': 'FAST', 'isWaypoints': False, 'fromMemory': True})<hhev_end>",
-        "<search_and_show_place>({'keyword': '樂章劇場1'})<hhev_split><search_and_show_place>({'keyword': '樂章劇場2'})<hhev_split><search_and_show_place>({'keyword': '樂章劇場3'})<hhev_end>",
-        "<control_car_properties>({'propertyId': 'HVAC_SEAT_VENTILATION_SET', 'areaId': '', 'operation': 'increase', 'value': '1'})<hhev_end>",
-        
+        // "<control_car_properties>({'propertyId': 'SEAT_CUSHION_SIDE_SUPPORT_POS', 'areaId': 'SEAT_ROW_3', 'operation': 'decrease'})<hhev_end>",
+        // "<hide_poi_list>({})<hhev_end>",
+        // "<nav_stop>({})<hhev_end>",
+        // "<control_car_properties>({'propertyId': 'POWER_TAILGATE_ON', 'areaId': '', 'operation': 'set', 'value': 'true'})<hhev_end>",
+        // "<search_and_show_place>({'keyword': '童年時光托嬰中心'})<hhev_end>",
+        // "<control_car_properties>({'propertyId': 'WINDOW_POS', 'areaId': '', 'operation': 'set', 'value': '90'})<hhev_end>",
+        // "<control_car_properties>({'propertyId': 'HVAC_FAN_DIRECTION', 'areaId': 'SEAT_ROW_1_RIGHT', 'operation': 'set', 'value': 'FOOT'})<hhev_end>",
+        // "<nav_start>({'keyword': '義式鄉村風的眼科診所', 'name': '基隆光明眼科', 'address': '基隆市仁愛區孝三路166號', 'latitude': 25.1296, 'longitude': 121.7424, 'routeType': 'FAST', 'isWaypoints': False, 'fromMemory': True})<hhev_end>",
+        // "<search_and_show_place>({'keyword': '樂章劇場1'})<hhev_split><search_and_show_place>({'keyword': '樂章劇場2'})<hhev_split><search_and_show_place>({'keyword': '樂章劇場3'})<hhev_end>",
+        // "<control_car_properties>({'propertyId': 'HVAC_SEAT_VENTILATION_SET', 'areaId': '', 'operation': 'increase', 'value': '1'})<hhev_end>",
+        // "<get_hhtd_info>(<args_split>論壇地點在哪裡？)<hhev_end>",
+        "<search_and_show_place>(文心運動館 淡水老街附近)<hhev_end>",
+        "<nav_start>(文心運動館<args_split>榮星體育館<args_split>台北市中山區松江路367號<args_split>25.065321<args_split>121.533234<args_split>FAST<args_split>False<args_split>)<hhev_end>",
+        "<control_car_properties>(HVAC_TEMPERATURE_SET<args_split>SEAT_ALL<args_split>increase<args_split>3)<hhev_end>",
     };
 
     DataProcessor dp;

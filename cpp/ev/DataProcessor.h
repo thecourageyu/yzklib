@@ -8,12 +8,12 @@
 // #include "include/nlohmann/json.hpp"
 #include <nlohmann/json.hpp>
 
+using namespace std;
 using json = nlohmann::json;   // alias (optional)
 
 // Define ToolCall in the header so both .h and .cpp can use it
 struct ToolCall {
-    std::string name;
-    // std::string arguments;
+    string name;
     json arguments;
 };
 
@@ -22,14 +22,14 @@ class DataProcessor {
 //     std::vector<string> newSpecialTokens;
 public:
 
-    std::string pythonDictToJson(std::string s);
-    std::vector<ToolCall> parseToolCalls(const std::string &text);
-    std::string getOpenAIToolCall(std::string modelResponse, std::string position);
-    std::string buildPlannerChatTemplate(const std::vector<std::pair<std::string, std::string>> &history);
-    std::string buildSolverChatTemplate(const std::vector<std::pair<std::string, std::string>> &history);
+    string pythonDictToJson(string s);
+    vector<ToolCall> parseToolCalls(const string &text, bool posi2Kw = true);
+    string getOpenAIToolCall(string modelResponse, string position);
+    string buildPlannerChatTemplate(const vector<pair<string, string>> &history);
+    string buildSolverChatTemplate(const vector<pair<string, string>> &history);
 
-    std::string build_chat_template(
-        const std::vector<std::pair<std::string, std::string>> &history);
+    string build_chat_template(
+        const vector<pair<string, string>> &history);
 };
 
 #endif // DATA_PROCESSOR_H
