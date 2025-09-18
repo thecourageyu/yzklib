@@ -14,29 +14,67 @@ using json = nlohmann::json;   // alias (optional)
 
 
 static json keywordPositionalArgsMapping = {
-    {"control_car_properties", {
-        "propertyId", 0,
-        "areaId", 1,
-        "operation", 2,
-        "value", 3,
-    }},
-    {"get_hhtd_info", {"areaId", 0, "query", 1}},
-    {"get_vehicle_info", {"areaId", 0, "query", 1}},
-    {"handle_miscellaneous_task", {"user_query", 0}},
-    {"hide_poi_list", json::object()},
-    {"nav_start", {
-        "keyword", 0,
-        "name", 1,
-        "address", 2,
-        "latitude", 3,
-        "longitude", 4,
-        "routeType", 5,
-        "isWaypoints", 6,
-        "fromMemory", 7,
-    }},
-    {"nav_stop", json::object()},
-    {"search_and_show_place", {"keyword", 0}},
-    {"set_seat_mode", {"areaId", 0, "operation", 1, "value", 2}},
+    {
+        "control_car_properties",
+        {
+            {"propertyId", 0},
+            {"areaId", 1},
+            {"operation", 2},
+            {"value", 3}
+        },
+    },
+    {
+        "get_hhtd_info", 
+            {
+                {"areaId", 0}, 
+                {"query", 1}
+            }
+    },
+    {
+        "get_vehicle_info", 
+        {
+            {"areaId", 0}, 
+            {"query", 1}
+        }
+    },
+    {
+        "handle_miscellaneous_task", 
+            {
+                {"user_query", 0}
+            }
+    },
+    {
+        "hide_poi_list", json::object()
+    },
+    {
+        "nav_start", 
+        {
+            {"keyword", 0},
+            {"name", 1},
+            {"address", 2},
+            {"latitude", 3},
+            {"longitude", 4},
+            {"routeType", 5},
+            {"isWaypoints", 6},
+            {"fromMemory", 7}
+        }
+    },
+    {
+        "nav_stop", json::object()
+    },
+    {
+        "search_and_show_place", {
+            {"keyword", 0}
+        }
+    },
+    {
+        "set_seat_mode", 
+        {
+            {"areaId", 0}, 
+            {"operation", 1}, 
+            {"value", 2}
+        }
+    },
 };
 
 static vector<string> newSpecialTokens = {
@@ -134,6 +172,22 @@ string DataProcessor::pythonDictToJson(string s) {
 }
 
 vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool posi2Kw) {
+
+    // nlohmann::json keyword2Position = {
+    //     {"ok", {{"k", 1}, {"k2", 2}}},
+    //     {"keyword", 0},
+    //     {"name", 1},
+    //     {"address", 2}
+    // };
+    // for (auto& [kw, posi] : keyword2Position.items()) {
+    //     std::cout << "key=" << kw << " value=" << posi << "\n";
+    // }
+
+    // for (auto& [kw, posi] : keywordPositionalArgsMapping.items()) {
+    //     std::cout << "key=" << kw << " value=" << posi << "\n";
+    // }
+
+
     string text = inputText;
     vector<ToolCall> tool_calls;
 
@@ -174,23 +228,31 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
             
             if (posi2Kw) {
                 posiArgs.clear();
-                posiArgs.shrink_to_fit();   // optional, forces memory release
+                // posiArgs.shrink_to_fit();   // optional, forces memory release
                 posi2Kwargs.clear(); 
 
                 json keyword2Position = keywordPositionalArgsMapping[toolName];
-
+                
+                // cout << keyword2Position << endl;
+                
                 start = 0;
                 while ((end = toolArgs.find("<args_split>", start)) != string::npos) {
                     posiArgs.push_back(toolArgs.substr(start, end - start));    
                     start = end + string("<args_split>").length();
                 }
                 
+                // if (toolArgs.substr(toolArgs.length() - string("<args_split>").length(), string("<args_split>").length()) == "<args_split>") {
+                //     posiArgs.push_back("");
+                // }
+                posiArgs.push_back(toolArgs.substr(start));
+
                 if (posiArgs.size() == 0) {
                     posiArgs.push_back(toolArgs);
                 }
 
                 for (auto& [kw, posi] : keyword2Position.items()) {
-                    posi2Kwargs[kw] = posiArgs[posi];
+                    // cout << "keyword: " << kw << "; posi: " << posi << "; value: " << posiArgs.at(posi) << endl;
+                    posi2Kwargs[kw] = posiArgs.at(posi);
                 }
                 tool_calls.push_back({toolName, posi2Kwargs});
                 
@@ -431,3 +493,32 @@ Improved Response:
 }
 
 
+// vector<pair<string, string>> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
+string DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
+    // vector<pair<string, string>> message;
+    json message = json::array();
+    for(size_t i = 0; i < chatHistory.size(); ++i) {
+        string role = chatHistory[i].first;
+        string content = chatHistory[i].second;
+        printf("[role] %s\n", role.c_str());
+        printf("[message] %s\n", content.c_str());
+        if (role == "user") {
+            message.push_back({{"role", "user"}, {"message", content}});
+        } else if (role == "ipython") {
+            message.push_back({{"role", "observation"}, {"message", content}});
+        } else {
+            if (content.find("<hhev_end>") != string::npos) {
+                json fc = json::array();
+                vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(content, false);
+                for (const auto& r : toolCalls) {
+                    fc.push_back({{"name", r.name}, {"arguments", r.arguments}});
+                }
+                message.push_back({{"role", "function_call"}, {"message", fc}});
+            } else {
+                message.push_back({{"role", "ai"}, {"message", content}});
+            }
+
+        }
+    }
+    return message.dump();
+}

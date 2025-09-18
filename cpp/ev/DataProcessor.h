@@ -30,6 +30,8 @@ public:
 
     string build_chat_template(
         const vector<pair<string, string>> &history);
+
+    string toJimmyMessage(vector<pair<string, string>>& chatHistory);
 };
 
 #endif // DATA_PROCESSOR_H
