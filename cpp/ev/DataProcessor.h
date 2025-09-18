@@ -23,7 +23,8 @@ class DataProcessor {
 public:
 
     string pythonDictToJson(string s);
-    vector<ToolCall> parseToolCalls(const string &text, bool posi2Kw = true);
+    // vector<ToolCall> parseToolCalls(const string &text, bool posi2Kw = true);
+    vector<ToolCall> parseToolCalls(const string &text, bool posi2Kw = false);
     string getOpenAIToolCall(string modelResponse, string position);
     string buildPlannerChatTemplate(const vector<pair<string, string>> &history);
     string buildSolverChatTemplate(const vector<pair<string, string>> &history);

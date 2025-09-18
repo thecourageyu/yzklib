@@ -71,6 +71,15 @@ int main() {
         // }
 
         std::string toolCalls = dp.getOpenAIToolCall(text, "GLOBAL");
+        
+        std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
+
+        toolCalls = dp.getOpenAIToolCall(text, "OMG");
+        
+        std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
+
+        toolCalls = dp.getOpenAIToolCall(text, "");
+        
         std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
     }
 

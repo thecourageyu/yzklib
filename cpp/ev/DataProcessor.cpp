@@ -322,7 +322,8 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
         }
 
 
-        if (tc.name == "control_car_properties") {
+        很多tool都有areaId
+        >>>>>>>>>>>>if (tc.name == "control_car_properties") {
             if (arguments_obj.is_array()) {
                 if (arguments_obj[0].contains("areaId")) {
                     if (arguments_obj[0]["areaId"].is_string() && arguments_obj[0]["areaId"] == "") {
