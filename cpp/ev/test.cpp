@@ -23,12 +23,18 @@ std::string fill_doa_location(const std::string& doa_location, const std::string
 
 int main() {
 
+    // std::vector<std::pair<std::string, std::string>> history_vector = {
+    //     {"user",       "我想要去國父紀念館。"},
+    //     // {"assistants", "<search_and_show_place>([{'keyword': '國父紀念館'}])<hhev_end>"},
+    //     {"assistants", "<search_and_show_place>({'keyword': '國父紀念館'})<hhev_end>"},
+    //     {"ipython",    "[{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}]"},
+    //     {"assistants", "response 123"},
+    // };
+
     std::vector<std::pair<std::string, std::string>> history_vector = {
         {"user",       "我想要去國父紀念館。"},
-        // {"assistants", "<search_and_show_place>([{'keyword': '國父紀念館'}])<hhev_end>"},
-        {"assistants", "<search_and_show_place>({'keyword': '國父紀念館'})<hhev_end>"},
-        {"ipython",    "[{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}]"},
-        {"assistants", "response 123"},
+        {"assistants", "<search_and_show_place>(國父紀念館)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
+        {"ipython",    "{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}"}
     };
 
     // std::vector<std::string> raw_tool_calls = {
@@ -48,8 +54,14 @@ int main() {
     DataProcessor dp;
     YZKHelper hp;
     
-    string jimmyText = dp.toJimmyMessage(history_vector);
-    printf("[Jimmy] %s\n", jimmyText.c_str());
+    // string jimmyText = dp.toJimmyMessage123(history_vector);
+    // printf("[Jimmy] %s\n", jimmyText.c_str());
+
+    vector<json> jimmyJSON = dp.toJimmyMessage(history_vector);
+    for (const auto& l : jimmyJSON) {
+        printf("[Jimmy] %s\n", l.dump().c_str());
+    }
+
 
     std::vector<std::string> raw_tool_calls = hp.load_file(fname);
 
@@ -70,15 +82,7 @@ int main() {
         //     std::cout << wot << std::endl;
         // }
 
-        std::string toolCalls = dp.getOpenAIToolCall(text, "GLOBAL");
-        
-        std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
-
-        toolCalls = dp.getOpenAIToolCall(text, "OMG");
-        
-        std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
-
-        toolCalls = dp.getOpenAIToolCall(text, "");
+        std::string toolCalls = dp.getOpenAIToolCall(text, "GLOBAL123");
         
         std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
     }
@@ -98,7 +102,7 @@ int main() {
         {"ipython", "[{'content':'{\"name\":\"search_and_show_place\",\"status\":\"success\",\"message\":\"地點查詢成功\",\"poi\":[{\"name\":\"成大醫院\",\"type\":\"其他\",\"address\":\"台南市北區勝利路138號\",\"latitude\":23.000703,\"longitude\":120.219661,\"description\":\"成大醫院是國立成功大學附設醫院，為南台灣重要的醫學中心，提供完整的醫療服務與先進的醫療設備。結合醫學教育與臨床研究，擁有優秀的醫療團隊，是台南地區民眾信賴的大型綜合醫院，也是醫學教育的重要基地。\",\"fromMemory\":false}]}','role':'tool','tool_call_id':'call_1'}]"},
     };
 
-    std::cout << dp.buildPlannerChatTemplate(history) << std::endl;
+    // std::cout << dp.buildPlannerChatTemplate(history) << std::endl;
     // std::cout << dp.buildSolverChatTemplate(history) << std::endl;
 
 

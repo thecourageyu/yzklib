@@ -225,7 +225,15 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
         if (regex_search(tool, match, re)) {
             string toolName = match[1];
             string toolArgs = match[2];
-            
+            string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
+
+            cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>" << fixedArgs << endl;
+
+            if (!keywordPositionalArgsMapping.contains(toolName)) {
+                printf("[ERR] keywordPositionalArgsMapping doesn't contain: %s\n", toolName.c_str());
+                continue;
+            }
+
             if (posi2Kw) {
                 posiArgs.clear();
                 // posiArgs.shrink_to_fit();   // optional, forces memory release
@@ -236,18 +244,23 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                 // cout << keyword2Position << endl;
                 
                 start = 0;
-                while ((end = toolArgs.find("<args_split>", start)) != string::npos) {
-                    posiArgs.push_back(toolArgs.substr(start, end - start));    
+                while ((end = fixedArgs.find("<args_split>", start)) != string::npos) {
+                    posiArgs.push_back(fixedArgs.substr(start, end - start));    
                     start = end + string("<args_split>").length();
                 }
                 
-                // if (toolArgs.substr(toolArgs.length() - string("<args_split>").length(), string("<args_split>").length()) == "<args_split>") {
+                // if (fixedArgs.substr(fixedArgs.length() - string("<args_split>").length(), string("<args_split>").length()) == "<args_split>") {
                 //     posiArgs.push_back("");
                 // }
-                posiArgs.push_back(toolArgs.substr(start));
+                posiArgs.push_back(fixedArgs.substr(start));
 
                 if (posiArgs.size() == 0) {
-                    posiArgs.push_back(toolArgs);
+                    posiArgs.push_back(fixedArgs);
+                }
+
+                if (posiArgs.size() != keyword2Position.size()) {
+                    printf("[ERR] posiArgs.size() != keyword2Position.size(): %zu\n != %zu\n", posiArgs.size(), keyword2Position.size());
+                    continue;
                 }
 
                 for (auto& [kw, posi] : keyword2Position.items()) {
@@ -258,15 +271,16 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                 
             } else {
                 try {
-                    string fixed_args = DataProcessor::pythonDictToJson(toolArgs);
-                    json parsed = json::parse(fixed_args);
+                    // string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
+                    json parsed = json::parse(fixedArgs);
                     tool_calls.push_back({toolName, parsed});
                 } catch (exception& e) {
-                    string fixed_args = DataProcessor::pythonDictToJson(toolArgs);
+                    // string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
                     // Fallback: store raw string if JSON parse fails
-                    tool_calls.push_back({toolName, fixed_args});
+                    tool_calls.push_back({toolName, fixedArgs});
+                    // tool_calls.push_back({toolName, json{}});
                     cerr << "[ERR] parse tool args failed! " 
-                            << toolName << ", " << fixed_args << "\n" 
+                            << toolName << ", " << fixedArgs << "\n" 
                             << e.what() << endl;
                 }
             }
@@ -285,18 +299,26 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
 // string DataProcessor::getOpenAIToolCall(const string& toolName, const json& parameters) 
 string DataProcessor::getOpenAIToolCall(string modelResponse, string position) 
 {
-    vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
-    // for (auto &c : toolCalls) {
-    //     cout << "Func: " << c.name << " Args: " << c.arguments << endl;
-
-    // }
     json payload;
-    payload["tool_calls"] = json::array();
-
     json parameters;
     json arguments_obj;
     json fn;
     json call;
+
+    vector<string> checkAreaId;
+    vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
+    
+    for (auto& [toolName, toolArgs] : keywordPositionalArgsMapping.items()) {
+        
+        if (toolArgs.contains("areaId")) {
+            checkAreaId.push_back(toolName);
+            // printf("[INFO] tool with areaId: %s\n", toolName.c_str());
+        }
+
+    }
+    
+    payload["tool_calls"] = json::array();
+    
     // for (auto &tc : toolCalls) {
     //    vector<int> a = {10, 20, 30};
 
@@ -322,8 +344,9 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
         }
 
 
-        很多tool都有areaId
-        >>>>>>>>>>>>if (tc.name == "control_car_properties") {
+        // check tools with areaId
+        // if (tc.name == "control_car_properties") {
+        if (find(checkAreaId.begin(), checkAreaId.end(), tc.name) != checkAreaId.end()) {
             if (arguments_obj.is_array()) {
                 if (arguments_obj[0].contains("areaId")) {
                     if (arguments_obj[0]["areaId"].is_string() && arguments_obj[0]["areaId"] == "") {
@@ -495,7 +518,7 @@ Improved Response:
 
 
 // vector<pair<string, string>> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
-string DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
+string DataProcessor::toJimmyMessage123(vector<pair<string, string>>& chatHistory) {
     // vector<pair<string, string>> message;
     json message = json::array();
     for(size_t i = 0; i < chatHistory.size(); ++i) {
@@ -522,4 +545,33 @@ string DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) 
         }
     }
     return message.dump();
+}
+
+vector<json> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
+    // vector<pair<string, string>> message;
+    vector<json> message;
+    for(size_t i = 0; i < chatHistory.size(); ++i) {
+        string role = chatHistory[i].first;
+        string content = chatHistory[i].second;
+        printf("[role] %s\n", role.c_str());
+        printf("[message] %s\n", content.c_str());
+        if (role == "user") {
+            message.push_back(json{{"role", "user"}, {"message", content}});
+        } else if (role == "ipython") {
+            message.push_back(json{{"role", "observation"}, {"message", content}});
+        } else {
+            if (content.find("<hhev_end>") != string::npos) {
+                json fc = json::array();
+                vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(content, false);
+                for (const auto& r : toolCalls) {
+                    fc.push_back(json{{"name", r.name}, {"arguments", r.arguments}});
+                }
+                message.push_back(json{{"role", "function_call"}, {"message", fc.dump()}});
+            } else {
+                message.push_back(json{{"role", "ai"}, {"message", content}});
+            }
+
+        }
+    }
+    return message;
 }
