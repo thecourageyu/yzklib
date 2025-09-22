@@ -1,5 +1,7 @@
 #include "DataProcessor.h"   // make sure this is at the top
 
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 // #include <ranges>
 #include <regex>
@@ -60,7 +62,8 @@ static json keywordPositionalArgsMapping = {
         }
     },
     {
-        "nav_stop", json::object()
+        // "nav_stop", json::object()
+        "nav_stop", {}
     },
     {
         "search_and_show_place", {
@@ -142,6 +145,24 @@ static vector<string> newSpecialTokens = {
 
 
 
+
+string trim(const string& str) {
+
+    // Remove whitespace / newline characters
+    // ' ', \t, \n, \v, \f, \r
+
+    auto start = str.begin();
+    while (start != str.end() && isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    auto end = str.end();
+    do {
+        end--;
+    } while (end != start && isspace((unsigned char)*end));
+
+    return string(start, end + 1);
+}
 
 string replaceAll(string text, const string& from, const string& to) {
     size_t start_pos = 0;
@@ -227,7 +248,7 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
             string toolArgs = match[2];
             string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
 
-            cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>" << fixedArgs << endl;
+            // cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>" << fixedArgs << endl;
 
             if (!keywordPositionalArgsMapping.contains(toolName)) {
                 printf("[ERR] keywordPositionalArgsMapping doesn't contain: %s\n", toolName.c_str());
@@ -245,28 +266,52 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                 
                 start = 0;
                 while ((end = fixedArgs.find("<args_split>", start)) != string::npos) {
-                    posiArgs.push_back(fixedArgs.substr(start, end - start));    
+                    
+                    string arg_str = fixedArgs.substr(start, end - start);
+                    // cout << "check areaId: " << arg_text << endl;
+                    if (arg_str == "\"\"" && arg_str.size() == 2) {  // ex. <set_seat_mode>(''<args_split>set<args_split>OFF)<hhev_end> will get areaId = "\"\""
+                        posiArgs.push_back("");    
+
+                    } else {
+                        posiArgs.push_back(fixedArgs.substr(start, end - start));    
+                    }
                     start = end + string("<args_split>").length();
                 }
                 
-                // if (fixedArgs.substr(fixedArgs.length() - string("<args_split>").length(), string("<args_split>").length()) == "<args_split>") {
-                //     posiArgs.push_back("");
-                // }
-                posiArgs.push_back(fixedArgs.substr(start));
 
-                if (posiArgs.size() == 0) {
-                    posiArgs.push_back(fixedArgs);
+                if (static_cast<int>(keyword2Position.size()) > 0 && posiArgs.size() == keyword2Position.size() - 1) {
+                    string arg_str = fixedArgs.substr(start);
+                    if (arg_str == "\"\"" && arg_str.size() == 2) {  // ex. <set_seat_mode>(''<args_split>set<args_split>OFF)<hhev_end> will get areaId = "\"\""
+                        posiArgs.push_back("");    
+                    } else {
+                        posiArgs.push_back(arg_str);
+                    }
                 }
 
                 if (posiArgs.size() != keyword2Position.size()) {
-                    printf("[ERR] posiArgs.size() != keyword2Position.size(): %zu\n != %zu\n", posiArgs.size(), keyword2Position.size());
-                    continue;
+                    printf("[WARN] %s posiArgs.size() != keyword2Position.size() => %zu != %zu\n", toolName.c_str(), posiArgs.size(), keyword2Position.size());
+                    // continue;
                 }
 
                 for (auto& [kw, posi] : keyword2Position.items()) {
-                    // cout << "keyword: " << kw << "; posi: " << posi << "; value: " << posiArgs.at(posi) << endl;
-                    posi2Kwargs[kw] = posiArgs.at(posi);
+                    
+                    if (posi >= 0 && posi < static_cast<int>(posiArgs.size())) {
+                        // cout << "keyword: " << kw << "; posi: " << posi << "; value: " << posiArgs.at(posi) << "; size: " << posiArgs.at(posi).size() <<endl;
+                        
+                        if (posiArgs.at(posi) == "\"\"" && posiArgs.at(posi).size() == 2) {
+                            posi2Kwargs[kw] = "";
+                        } else {
+                            posi2Kwargs[kw] = posiArgs.at(posi);
+                        }
+                    }
+
                 }
+
+                if (posi2Kwargs.is_null() || posi2Kwargs.empty()) {
+                    // cout << "JSON is null or empty\n";
+                    posi2Kwargs = json::object();  // reset to empty JSON object
+                }
+
                 tool_calls.push_back({toolName, posi2Kwargs});
                 
             } else {
@@ -308,6 +353,7 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
     vector<string> checkAreaId;
     vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
     
+    // these functions need to check areaId
     for (auto& [toolName, toolArgs] : keywordPositionalArgsMapping.items()) {
         
         if (toolArgs.contains("areaId")) {
@@ -327,19 +373,18 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
         // cout << idx << ". name: " << tc.name << "args: " << tc.arguments << "\n" << endl;
         parameters = tc.arguments;
         
-        if (parameters.is_array()) {
+        if (parameters.is_array()) {  
             // [{k: v , ...}, {}, ...]
             arguments_obj = parameters;
         } else if (parameters.is_object() &&
                 parameters.size() == 1 &&
                 parameters.contains("properties") &&
                 parameters.at("properties").is_array()) {
-            // {properties: []}
+            // {properties: []}, old format
             // cout << "parameter is object!" << endl;
             arguments_obj = parameters.at("properties");
         } else {
-            // {k: v, ...}
-            // cout << "parameter is ?!" << endl;
+            // {k: v, ...}, new format (started at v1.4)
             arguments_obj = parameters;
         }
 
@@ -347,9 +392,12 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
         // check tools with areaId
         // if (tc.name == "control_car_properties") {
         if (find(checkAreaId.begin(), checkAreaId.end(), tc.name) != checkAreaId.end()) {
+            // cout << "check areaId for tool name: " << tc.name << endl;
             if (arguments_obj.is_array()) {
                 if (arguments_obj[0].contains("areaId")) {
-                    if (arguments_obj[0]["areaId"].is_string() && arguments_obj[0]["areaId"] == "") {
+                    // cout << "check areaId for tool name (arr): " << tc.name << "; args: " << arguments_obj[0]["areaId"] << endl;
+                    // if (arguments_obj[0]["areaId"].is_string() && arguments_obj[0]["areaId"] == "") {
+                    if (arguments_obj[0]["areaId"].is_string() && (trim(arguments_obj["areaId"]).empty() || arguments_obj["areaId"] == "")) {
                         arguments_obj[0]["areaId"] = position;
                     } else if (arguments_obj[0]["areaId"].is_null()) {
                         arguments_obj[0]["areaId"] = position;
@@ -360,7 +408,11 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
                 }
             } else {    
                 if (arguments_obj.contains("areaId")) {
-                    if (arguments_obj["areaId"].is_string() && arguments_obj["areaId"] == "") {
+                    // cout << "check areaId for tool name (obj): " << tc.name << "; args: " << arguments_obj["areaId"] << "; size: " << arguments_obj["areaId"].size() << endl;
+                    // if (arguments_obj["areaId"].is_string() && arguments_obj["areaId"] == "") {
+                    if (arguments_obj["areaId"].is_string() && (trim(arguments_obj["areaId"]).empty() || arguments_obj["areaId"] == "")) {
+                    // if (arguments_obj["areaId"].is_string() && trim(arguments_obj["areaId"]).empty()) {
+
                         arguments_obj["areaId"] = position;
                     } else if (arguments_obj["areaId"].is_null()) {
                         arguments_obj["areaId"] = position;
@@ -562,7 +614,8 @@ vector<json> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHis
         } else {
             if (content.find("<hhev_end>") != string::npos) {
                 json fc = json::array();
-                vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(content, false);
+                // vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(content, false);
+                vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(content, true);
                 for (const auto& r : toolCalls) {
                     fc.push_back(json{{"name", r.name}, {"arguments", r.arguments}});
                 }

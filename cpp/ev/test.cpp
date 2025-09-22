@@ -31,11 +31,18 @@ int main() {
     //     {"assistants", "response 123"},
     // };
 
+    // std::vector<std::pair<std::string, std::string>> history_vector = {
+    //     {"user",       "我想要去國父紀念館。"},
+    //     {"assistants", "<search_and_show_place>(國父紀念館)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
+    //     {"ipython",    "{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}"}
+    // };
+
     std::vector<std::pair<std::string, std::string>> history_vector = {
-        {"user",       "我想要去國父紀念館。"},
-        {"assistants", "<search_and_show_place>(國父紀念館)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
-        {"ipython",    "{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}"}
+        {"user",       "開啟休憩模式。"},
+        {"assistants", "<set_seat_mode>(<args_split>set<args_split>BREAK)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
+        {"ipython",    "[{\"role\":\"tool\",\"tool_call_id\":\"call_1\",\"content\":\"{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}\"}]"}
     };
+
 
     // std::vector<std::string> raw_tool_calls = {
     //     // "<control_car_properties>({'propertyId': 'SEAT_CUSHION_SIDE_SUPPORT_POS', 'areaId': 'SEAT_ROW_3', 'operation': 'decrease'})<hhev_end>",
@@ -82,7 +89,7 @@ int main() {
         //     std::cout << wot << std::endl;
         // }
 
-        std::string toolCalls = dp.getOpenAIToolCall(text, "GLOBAL123");
+        std::string toolCalls = dp.getOpenAIToolCall(text, "GLOBAL123YZK");
         
         std::cout << "\n\n[toolCalls] " << toolCalls << "\n" << std::endl;
     }
