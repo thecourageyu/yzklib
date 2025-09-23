@@ -38,10 +38,13 @@ int main() {
     // };
 
     std::vector<std::pair<std::string, std::string>> history_vector = {
-        {"user",       "開啟休憩模式。"},
+        {"user",       "開啟休憩模式"},
         {"assistants", "<set_seat_mode>(<args_split>set<args_split>BREAK)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
-        {"ipython",    "[{\"role\":\"tool\",\"tool_call_id\":\"call_1\",\"content\":\"{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}\"}]"}
+        // {"ipython",    "{"role":"tool","tool_call_id":"call_1","content":"[{\0"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}"}
+        {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
     };
+
+    
 
 
     // std::vector<std::string> raw_tool_calls = {
@@ -64,7 +67,13 @@ int main() {
     // string jimmyText = dp.toJimmyMessage123(history_vector);
     // printf("[Jimmy] %s\n", jimmyText.c_str());
 
-    vector<json> jimmyJSON = dp.toJimmyMessage(history_vector);
+    vector<json> messages_manual = {
+        json{{"message", "開啟休憩模式"}, {"role", "user"}},
+        json{{"message","[{\"arguments\":{\"areaId\":\"\",\"operation\":\"set\",\"value\":\"BREAK\"},\"name\":\"set_seat_mode\"}]"},{"role","function_call"}},
+        json{{"message","[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"},{"role","observation"}}
+    };
+
+    vector<nlohmann::ordered_json> jimmyJSON = dp.toJimmyMessage(history_vector);
     for (const auto& l : jimmyJSON) {
         printf("[Jimmy] %s\n", l.dump().c_str());
     }

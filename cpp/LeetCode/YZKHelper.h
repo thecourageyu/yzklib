@@ -9,13 +9,14 @@
 #include <nlohmann/json.hpp>
 
 using namespace std;
-using json = nlohmann::json;
+using basic_json = nlohmann::json;
+// using json = nlohmann::ordered_json;
 
 class YZKHelper {
 public:
     vector<string> load_file(string &filename);
     vector<vector<string>> load_csv(string &filename);;
-    vector<json> load_json(string &filename);;
+    vector<basic_json> load_json(string &filename);;
 };
 
 

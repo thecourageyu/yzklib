@@ -10,12 +10,13 @@
 #include <nlohmann/json.hpp>
 
 using namespace std;
-using json = nlohmann::json;   // alias (optional)
+using basic_json = nlohmann::json;   // alias (optional)
+using json = nlohmann::ordered_json;   // alias (optional)
 // sudo apt-get install nlohmann-json3-dev
 // wget https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp -O json.hpp
 
 
-static json keywordPositionalArgsMapping = {
+static basic_json keywordPositionalArgsMapping = {
     {
         "control_car_properties",
         {
@@ -46,7 +47,7 @@ static json keywordPositionalArgsMapping = {
             }
     },
     {
-        "hide_poi_list", json::object()
+        "hide_poi_list", basic_json::object()
     },
     {
         "nav_start", 
@@ -62,7 +63,7 @@ static json keywordPositionalArgsMapping = {
         }
     },
     {
-        // "nav_stop", json::object()
+        // "nav_stop", basic_json::object()
         "nav_stop", {}
     },
     {
@@ -120,8 +121,10 @@ static vector<string> newSpecialTokens = {
     "<HVAC_TEMPERATURE_SET>",
     "<INFOTAINMENT_SYSTEM>",
     "<INTERIOR_LIGHT>",
+    "<POWER_ALL_SUNSHADE>",
     "<POWER_SUNSHADE>",
     "<POWER_TAILGATE_ON>",
+    "<READING_LIGHT_LEVEL>",
     "<SEAT_BACKREST_ANGLE_POS>",
     "<SEAT_CUSHION_SIDE_SUPPORT_POS>",
     "<SEAT_FORE_AFT_POS>",
@@ -194,7 +197,7 @@ string DataProcessor::pythonDictToJson(string s) {
 
 vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool posi2Kw) {
 
-    // nlohmann::json keyword2Position = {
+    // nlohmann::basic_json keyword2Position = {
     //     {"ok", {{"k", 1}, {"k2", 2}}},
     //     {"keyword", 0},
     //     {"name", 1},
@@ -240,7 +243,7 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
     // Regex to match <tool>(args)
     regex re("<(.*)>\\((.*)\\)");
     vector<string> posiArgs;
-    json posi2Kwargs;
+    basic_json posi2Kwargs;
     for (const auto& tool : tools) {
         smatch match;
         if (regex_search(tool, match, re)) {
@@ -260,7 +263,7 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                 // posiArgs.shrink_to_fit();   // optional, forces memory release
                 posi2Kwargs.clear(); 
 
-                json keyword2Position = keywordPositionalArgsMapping[toolName];
+                basic_json keyword2Position = keywordPositionalArgsMapping[toolName];
                 
                 // cout << keyword2Position << endl;
                 
@@ -309,7 +312,7 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
 
                 if (posi2Kwargs.is_null() || posi2Kwargs.empty()) {
                     // cout << "JSON is null or empty\n";
-                    posi2Kwargs = json::object();  // reset to empty JSON object
+                    posi2Kwargs = basic_json::object();  // reset to empty JSON object
                 }
 
                 tool_calls.push_back({toolName, posi2Kwargs});
@@ -317,13 +320,13 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
             } else {
                 try {
                     // string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
-                    json parsed = json::parse(fixedArgs);
+                    basic_json parsed = basic_json::parse(fixedArgs);
                     tool_calls.push_back({toolName, parsed});
                 } catch (exception& e) {
                     // string fixedArgs = DataProcessor::pythonDictToJson(toolArgs);
                     // Fallback: store raw string if JSON parse fails
                     tool_calls.push_back({toolName, fixedArgs});
-                    // tool_calls.push_back({toolName, json{}});
+                    // tool_calls.push_back({toolName, basic_json{}});
                     cerr << "[ERR] parse tool args failed! " 
                             << toolName << ", " << fixedArgs << "\n" 
                             << e.what() << endl;
@@ -341,14 +344,14 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
 //  1) parameters 是 array → arguments 就是該 array
 //  2) parameters 唯一鍵為 "properties" 且其值為 array → arguments 就是該 array
 //  3) 其他情況 → arguments 為完整的 parameters 物件
-// string DataProcessor::getOpenAIToolCall(const string& toolName, const json& parameters) 
+// string DataProcessor::getOpenAIToolCall(const string& toolName, const basic_json& parameters) 
 string DataProcessor::getOpenAIToolCall(string modelResponse, string position) 
 {
-    json payload;
-    json parameters;
-    json arguments_obj;
-    json fn;
-    json call;
+    basic_json payload;
+    basic_json parameters;
+    basic_json arguments_obj;
+    basic_json fn;
+    basic_json call;
 
     vector<string> checkAreaId;
     vector<ToolCall> toolCalls = DataProcessor::parseToolCalls(modelResponse);
@@ -363,7 +366,7 @@ string DataProcessor::getOpenAIToolCall(string modelResponse, string position)
 
     }
     
-    payload["tool_calls"] = json::array();
+    payload["tool_calls"] = basic_json::array();
     
     // for (auto &tc : toolCalls) {
     //    vector<int> a = {10, 20, 30};
@@ -518,7 +521,7 @@ Improved Response:
 // Improved Response:
 
    
-// string build_solver_prompt(const vector<json>& messages) {
+// string build_solver_prompt(const vector<basic_json>& messages) {
     string chat_hist;
     string prev_role;
     string prev_content;

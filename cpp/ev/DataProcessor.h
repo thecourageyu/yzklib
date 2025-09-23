@@ -9,12 +9,13 @@
 #include <nlohmann/json.hpp>
 
 using namespace std;
-using json = nlohmann::json;   // alias (optional)
+using basic_json = nlohmann::json;   // alias (optional)
+using json = nlohmann::ordered_json;   // alias (optional)
 
 // Define ToolCall in the header so both .h and .cpp can use it
 struct ToolCall {
     string name;
-    json arguments;
+    basic_json arguments;
 };
 
 class DataProcessor {
