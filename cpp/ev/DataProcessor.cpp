@@ -602,6 +602,68 @@ string DataProcessor::toJimmyMessage123(vector<pair<string, string>>& chatHistor
     return message.dump();
 }
 
+
+string DataProcessor::Jeff2SLMToolCalls(const string &inputText) {
+
+    json toolCalls = json::parse(inputText);
+    string result = "";
+    string toolName;
+    json toolArgs;
+    int num_tool_calls = 0;
+    for (const auto& tool : toolCalls) {
+        if (tool.is_object()) {
+            if (num_tool_calls >= 1) {
+                result += "<hhev_split>";
+            }
+
+            toolName = tool["name"];
+            toolArgs = tool["arguments"];
+
+            if (keywordPositionalArgsMapping.contains(toolName)) {
+
+                vector<string> kw2Posi(keywordPositionalArgsMapping[toolName].size());   // runtime determined length 
+                for (auto& [kw, posi] : keywordPositionalArgsMapping[toolName].items()) {
+                    
+                    if (toolArgs.contains(kw)) {
+                        if (kw == "areaId" || kw == "propertyId") {
+                            if (toolArgs[kw] != "" && !trim(toolArgs[kw]).empty()) {
+                                kw2Posi[posi] = "<" + toolArgs[kw].get<std::string>() + ">";
+                            }
+                            
+                        } else {
+                            kw2Posi[posi] = "\"" + toolArgs[kw].get<std::string>() + "\"";
+                        }
+                        
+                    }
+
+                }
+                
+                result += "<" + toolName + ">(";
+
+                int idx = 0;
+                for (const auto& s : kw2Posi) {
+                    // std::cout << s << std::endl;
+                    if (!s.empty()) {
+                        result += s;
+                    }
+                    
+                    idx += 1;
+                    if (idx < kw2Posi.size()) {
+                        result += "<args_split>";
+                    }
+                }
+                result += ")";
+                num_tool_calls += 1;
+            }
+            
+        }
+    }
+    result += "<hhev_end>";
+
+    // printf("[Jeff] %s\n", result.c_str());
+    return result;
+}
+
 vector<json> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHistory) {
     // vector<pair<string, string>> message;
     vector<json> message;
@@ -613,7 +675,27 @@ vector<json> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHis
         if (role == "user") {
             message.push_back(json{{"role", "user"}, {"message", content}});
         } else if (role == "ipython") {
-            message.push_back(json{{"role", "observation"}, {"message", content}});
+            // json SRDCObs = json::parse(content);
+            // json obs;
+
+            // if (SRDCObs.is_array()) {
+            //     cout << "OK" << endl;
+            //     for (const auto& o : SRDCObs) {
+            //         cout << o.dump() << endl;
+            //         if (o.is_object() && o.contains("content")) {
+            //             obs.push_back(o["content"]);
+            //         }
+            //     }
+            //     // message.push_back(json{{"role", "observation"}, {"message", content}});    
+
+            //     message.push_back(json{{"role", "observation"}, {"message", obs.dump()}});
+            // } else {
+            //     message.push_back(json{{"role", "observation"}, {"message", content}});    
+            //     // continue;
+            // }
+
+            message.push_back(json{{"role", "observation"}, {"message", content}});    
+
         } else {
             if (content.find("<hhev_end>") != string::npos) {
                 json fc = json::array();

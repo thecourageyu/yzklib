@@ -34,6 +34,7 @@ public:
         const vector<pair<string, string>> &history);
 
     string toJimmyMessage123(vector<pair<string, string>>& chatHistory);
+    string Jeff2SLMToolCalls(const string &inputText);
     vector<json> toJimmyMessage(vector<pair<string, string>>& chatHistory);
 
 };

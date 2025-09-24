@@ -44,7 +44,12 @@ int main() {
         {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
     };
 
-    
+    // std::vector<std::pair<std::string, std::string>> history_vector = {
+    //     {"user",       "開啟休憩模式"},
+    //     {"assistants", "<set_seat_mode>(<args_split>set<args_split>BREAK)<hhev_end>"},
+    //     {"ipython", "[{\"content\":{\"name\":\"set_seat_mode\",\"status\":\"success\",\"message\":\"操作成功\",\"affectedArea\":[]},\"role\":\"tool\",\"tool_call_id\":\"call_1\"}]"},
+    // };
+
 
 
     // std::vector<std::string> raw_tool_calls = {
@@ -64,6 +69,25 @@ int main() {
     DataProcessor dp;
     YZKHelper hp;
     
+
+    vector<string> JeffInput = {
+        "[{\"arguments\":{\"areaId\":\"SEAT_ROW_1_RIGHT\",\"operation\":\"set\",\"value\":\"BREAK\"},\"name\":\"set_seat_mode\"}]",
+        "[{\"name\": \"control_car_properties\", \"arguments\": {\"propertyId\": \"HVAC_MAX_AC_ON\", \"areaId\": \"\", \"operation\": \"set\", \"value\": \"on\"}}]",
+        "[{\"name\": \"control_car_properties\", \"arguments\": {\"propertyId\": \"HVAC_MAX_AC_ON\", \"operation\": \"set\", \"value\": \"on\"}}]",
+        "[{\"name\": \"get_hhtd_info\", \"arguments\": {\"areaId\": \"\", \"query\": \"論壇地點在哪裡？\"}}]",
+        "[{\"name\": \"get_hhtd_info\", \"arguments\": {\"areaId\": \"YZKAreaId\", \"query\": \"論壇地點在哪裡？\"}}]",
+        "[{\"name\": \"control_car_properties\", \"arguments\": {\"propertyId\": \"HVAC_MAX_AC_ON\", \"areaId\": \"YZKAreaId\", \"operation\": \"set\", \"value\": \"on\"}}]",
+        "[{\"name\": \"get_hhtd_info\", \"arguments\": {\"areaId\": \"YZKAreaId\", \"query\": \"論壇地點在哪裡？\"}}, {\"name\": \"control_car_properties\", \"arguments\": {\"propertyId\": \"HVAC_MAX_AC_ON\", \"areaId\": \"YZKAreaId\", \"operation\": \"set\", \"value\": \"on\"}}]",
+        "[{\"name\": \"nav_stop\", \"arguments\": {}}]",
+        
+    };
+
+    for (auto& c : JeffInput) {
+        cout << "[JeffToolCall]" << c << endl;
+        string jeff2SLMToolCall = dp.Jeff2SLMToolCalls(c);
+        cout << "[Jeff2SLMToolCall]" << jeff2SLMToolCall << endl;
+    }
+
     // string jimmyText = dp.toJimmyMessage123(history_vector);
     // printf("[Jimmy] %s\n", jimmyText.c_str());
 
