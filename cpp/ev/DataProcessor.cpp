@@ -282,6 +282,7 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                 }
                 
 
+                // the last part, which is after <hhev_split> and before <hhev_end>
                 if (static_cast<int>(keyword2Position.size()) > 0 && posiArgs.size() == keyword2Position.size() - 1) {
                     string arg_str = fixedArgs.substr(start);
                     if (arg_str == "\"\"" && arg_str.size() == 2) {  // ex. <set_seat_mode>(''<args_split>set<args_split>OFF)<hhev_end> will get areaId = "\"\""
@@ -304,7 +305,24 @@ vector<ToolCall> DataProcessor::parseToolCalls(const string &inputText, bool pos
                         if (posiArgs.at(posi) == "\"\"" && posiArgs.at(posi).size() == 2) {
                             posi2Kwargs[kw] = "";
                         } else {
-                            posi2Kwargs[kw] = posiArgs.at(posi);
+
+                            // drop " in the first and the last place in a string
+                            string argVal = posiArgs.at(posi);
+
+                            if (argVal.length() > 0) {
+                                if (argVal.substr(0, 1) == "\"") {
+                                    argVal = argVal.substr(1);
+                                    // cout << argVal << endl;
+                                }
+                            
+                            
+                                if (argVal.substr(argVal.length() - 1, argVal.length()) == "\"") {
+                                    argVal = argVal.substr(0, argVal.length() - 1);
+                                    // cout << argVal << endl;
+                                }
+                            }
+                            
+                            posi2Kwargs[kw] = argVal;
                         }
                     }
 
@@ -631,7 +649,8 @@ string DataProcessor::Jeff2SLMToolCalls(const string &inputText) {
                             }
                             
                         } else {
-                            kw2Posi[posi] = "\"" + toolArgs[kw].get<std::string>() + "\"";
+                            // kw2Posi[posi] = "\"" + toolArgs[kw].get<std::string>() + "\"";
+                            kw2Posi[posi] = toolArgs[kw].get<std::string>();
                         }
                         
                     }
@@ -670,8 +689,8 @@ vector<json> DataProcessor::toJimmyMessage(vector<pair<string, string>>& chatHis
     for(size_t i = 0; i < chatHistory.size(); ++i) {
         string role = chatHistory[i].first;
         string content = chatHistory[i].second;
-        printf("[role] %s\n", role.c_str());
-        printf("[message] %s\n", content.c_str());
+        // printf("[role] %s\n", role.c_str());
+        // printf("[message] %s\n", content.c_str());
         if (role == "user") {
             message.push_back(json{{"role", "user"}, {"message", content}});
         } else if (role == "ipython") {

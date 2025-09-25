@@ -37,12 +37,30 @@ int main() {
     //     {"ipython",    "{\"name\": \"search_and_show_place\", \"status\": \"success\", \"message\": \"地點查詢成功\", \"poi\": [{\"name\": \"國父紀念館\", \"address\": \"台北市信義區仁愛路四段505號\", \"latitude\": 25.040112, \"longitude\": 121.560503, \"fromMemory\": false}]}"}
     // };
 
+    // std::vector<std::pair<std::string, std::string>> history_vector = {
+    //     {"user",       "開啟休憩模式"},
+    //     {"assistants", "<set_seat_mode>(<args_split>set<args_split>BREAK)<hhev_end>"},  
+    //     // {"ipython",    "{"role":"tool","tool_call_id":"call_1","content":"[{\0"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}"}
+    //     {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
+    // };
+
+    // std::vector<std::pair<std::string, std::string>> history_vector = {
+    //     {"user",       "開啟休憩模式"},
+    //     {"assistants", "<set_seat_mode>(<SEAT_ROW_1_RIGHT><args_split>\"set\"<args_split>\"BREAK\")<hhev_end>"},
+    //     {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
+    // };
+
     std::vector<std::pair<std::string, std::string>> history_vector = {
-        {"user",       "開啟休憩模式"},
-        {"assistants", "<set_seat_mode>(<args_split>set<args_split>BREAK)<hhev_end>"},  // <<< json 解不出 國父紀念館 ? 要 "國父紀念館"?
-        // {"ipython",    "{"role":"tool","tool_call_id":"call_1","content":"[{\0"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}"}
+        {"user",       "第一排空調已開啟"},
+        {"assistants", "<control_car_properties>(<HVAC_POWER_ON><args_split><SEAT_ROW_1><args_split>\"set\"<args_split>\"true\")<hhev_end>"},
         {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
     };
+
+//     [message] <set_seat_mode>(<SEAT_ROW_1_RIGHT><args_split>"set"<args_split>"BREAK")<hhev_end>
+// String successfully written to log.txt
+// [role] ipython
+// [message] [{"name": "control_car_properties", "status": "success", "message": "操作成功", "affectedArea": "SEAT_ROW_1"}]
+// [Error] Failed to do Solver: no template matched conditions
 
     // std::vector<std::pair<std::string, std::string>> history_vector = {
     //     {"user",       "開啟休憩模式"},
