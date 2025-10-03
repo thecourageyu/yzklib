@@ -48,4 +48,25 @@ int ProgramingEaxm::removeDuplicatesFromSortedArray(vector<int>& nums) {
 
 int removeElement(vector<int>& nums, int val) {
     // 27. Remove Element
+
+    vector<int> copy_nums = nums;
+
+    // lambda function syntax: [capture](parameter_list) -> return_type { function_body }
+    nums.erase(
+        remove_if(
+            nums.begin(), 
+            nums.end(), 
+            [&copy_nums, &val](int x) { return (x == val); }
+        ),
+        nums.end()
+    );
+
+
+    return nums.size();
+
+}
+
+
+int launchThreads(int n) {
+    
 }

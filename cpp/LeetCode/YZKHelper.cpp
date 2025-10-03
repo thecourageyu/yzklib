@@ -11,7 +11,7 @@
 #include <nlohmann/json.hpp>
 
 using namespace std;
-using json = nlohmann::json;
+using basic_json = nlohmann::json;
 // using json = nlohmann::ordered_json;
 
 vector<string> YZKHelper::load_file(string &filename) {
@@ -70,13 +70,13 @@ vector<vector<string>> YZKHelper::load_csv(string &filename) {
     return data;
 }
 
-vector<json> YZKHelper::load_json(string &filename) {
+vector<basic_json> YZKHelper::load_json(string &filename) {
     ifstream file(filename);
-    vector<json> data;
+    vector<basic_json> data;
     string x;
 
     while (file >> x) {
-        x = json::parse(x);
+        x = basic_json::parse(x);
         data.push_back(x);
     }
     

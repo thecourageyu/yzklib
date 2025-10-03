@@ -56,6 +56,7 @@ int main() {
         {"ipython",    "[{\"name\": \"control_car_properties\", \"status\": \"success\", \"message\": \"操作成功\", \"affectedArea\": \"SEAT_ROW_1\"}]"}
     };
 
+
 //     [message] <set_seat_mode>(<SEAT_ROW_1_RIGHT><args_split>"set"<args_split>"BREAK")<hhev_end>
 // String successfully written to log.txt
 // [role] ipython

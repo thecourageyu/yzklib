@@ -13,6 +13,7 @@ using namespace std;
 class ProgramingEaxm {
 public:
     int removeDuplicatesFromSortedArray(vector<int>& nums);
+    int removeElement(vector<int>& nums, int val);
 };
 
 
