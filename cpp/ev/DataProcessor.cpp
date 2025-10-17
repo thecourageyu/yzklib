@@ -28,10 +28,19 @@ static basic_json keywordPositionalArgsMapping = {
     },
     {
         "get_hhtd_info", 
-            {
-                {"areaId", 0}, 
-                {"query", 1}
-            }
+        {
+            {"areaId", 0}, 
+            {"query", 1}
+        }
+    },
+    {
+        "get_news",
+        {
+            {"category", 0}, 
+            {"index", 1}, 
+            {"action", 2}, 
+            {"areaId", 3}
+        },
     },
     {
         "get_vehicle_info", 
@@ -84,7 +93,6 @@ static basic_json keywordPositionalArgsMapping = {
 static vector<string> newSpecialTokens = {
     "<FRONT_WINDSHIELD>",
     "<REAR_WINDSHIELD>",
-    "<SEAT_ALL>",
     "<SEAT_ROW_1>",
     "<SEAT_ROW_1_LEFT>",
     "<SEAT_ROW_1_RIGHT>",
@@ -97,8 +105,6 @@ static vector<string> newSpecialTokens = {
     "<SLIDING_DOOR_LEFT>",
     "<SLIDING_DOOR_RIGHT>",
     "<SUNROOF>",
-    "<CHILD_LOCK>",
-    "<DASHBOARD_DISPLAY>",
     "<EV_CHARGE_PORT_OPEN>",
     "<FRONT_TRUNK_ON>",
     "<HVAC_AC_ON>",
@@ -119,8 +125,6 @@ static vector<string> newSpecialTokens = {
     "<HVAC_STEERING_WHEEL_HEAT>",
     "<HVAC_SYNC_MODE>",
     "<HVAC_TEMPERATURE_SET>",
-    "<INFOTAINMENT_SYSTEM>",
-    "<INTERIOR_LIGHT>",
     "<POWER_ALL_SUNSHADE>",
     "<POWER_SUNSHADE>",
     "<POWER_TAILGATE_ON>",
@@ -138,11 +142,10 @@ static vector<string> newSpecialTokens = {
     "<SEAT_MASSAGE_MODE>",
     "<SEAT_MASSAGE_ON>",
     "<SEAT_MASSAGE_REGION>",
+    "<SEAT_POSITION_MEMORY_SAVE>",
     "<SEAT_POSITION_MEMORY_SET>",
     "<SEAT_STOW_MODE>",
     "<SLIDING_DOOR_ON>",
-    "<SMARTPHONE_INTEGRATION>",
-    "<SURROUND_VIEW_CAMERA_SYSTEM>",
     "<WINDOW_POS>"
 };
 
